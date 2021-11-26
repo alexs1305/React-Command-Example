@@ -13,7 +13,7 @@ const appContext = createContext<{
   updateState: (state: AppContext) => void;
 }>({} as any);
 
-interface Command<TRequest> {
+interface Command<TRequest = {}> {
   action: (request: TRequest) => (state: AppContext) => AppContext;
 }
 
@@ -24,6 +24,14 @@ class AddNameCommand implements Command<{ name: string }> {
   });
 }
 
+class RemoveLastNameCommand implements Command {
+  action = () => (state: AppContext) => {
+    let copiedNames = [...state.names];
+    copiedNames = copiedNames.slice(0, copiedNames.length - 1);
+    return { ...state, names: copiedNames };
+  };
+}
+
 function useCommand<TRequest>(command: Command<TRequest>) {
   const { state, updateState } = useContext(appContext);
   return (request: TRequest) => {
@@ -31,11 +39,14 @@ function useCommand<TRequest>(command: Command<TRequest>) {
   };
 }
 
+const defaultRemove = new RemoveLastNameCommand();
+
 const NamesList: React.FC = () => {
   const {
     state: { names }
   } = useContext(appContext);
   const addCommand = useCommand(new AddNameCommand());
+  const removeCommand = useCommand(defaultRemove);
   return (
     <>
       Names:
@@ -43,6 +54,7 @@ const NamesList: React.FC = () => {
         <li>{n}</li>
       ))}
       <button onClick={() => addCommand({ name: "new" })}>Click to add</button>
+      <button onClick={removeCommand}>Click to remove</button>
     </>
   );
 };
